@@ -15,7 +15,7 @@ namespace WECalc
         private PIDController m_electricity_budget_controller_day;
         private PIDController m_electricity_budget_controller_night;
 
-        private double m_gainWater = 0.00625;
+        private double m_gainWater = 0.09;
         const double WATER_KP = 1.0;
         const double WATER_KI = 0.5;
         const double WATER_KD = 0.125;
@@ -28,6 +28,8 @@ namespace WECalc
         const double ELECTRICITY_KD = 0.01;
         const double ELECTRICITY_PADDING = 0.15;
         const int ELECTRICITY_N = 10;
+
+        const float BUDGET_RATE_LIMIT = 7.0f;
 
         public void updateLogic()
         {
@@ -45,29 +47,48 @@ namespace WECalc
 
         private void updateBudget(ItemClass.Service service, bool night)
         {
-            ServiceObject s;
-            s.m_capacity = getCapacity(service);
-            s.m_consumption = getConsumption(service);
-            s.m_budget = Singleton<EconomyManager>.instance.GetBudget(service, ItemClass.SubService.None, night);
-            float newBudget = (float)selectController(service, night).response(s);
-            newBudget = Mathf.Clamp(newBudget, 50, 150);
-            //newBudget = Mathf.Max(newBudget, 50);
-            //newBudget = Mathf.Min(newBudget, 150);
-            Singleton<EconomyManager>.instance.SetBudget(service, ItemClass.SubService.None, Mathf.RoundToInt(newBudget), night);
-
-            string msg = string.Format("Service {0} updated budget from ", service);
-            msg += string.Format("{0} to ", s.m_budget);
-            msg += string.Format("{0}.", newBudget);
-            msg += string.Format("\t{0} / ", s.m_consumption);
-            msg += string.Format("\t{0}.", s.m_capacity);
-            Logger.output(msg);
+            ServiceObject s = getServiceObject(service, night);
+            int newBudget = getNewBudget(s, service, night);
+            Singleton<EconomyManager>.instance.SetBudget(service, ItemClass.SubService.None, newBudget, night);
         }
 
-        private int getCapacity(ItemClass.Service service)
+        private ServiceObject getServiceObject(ItemClass.Service service, bool night)
+        {
+            ServiceObject s;
+            bool checkWaterLevel = isWaterCapacityLower();
+            s.m_capacity = getCapacity(service, checkWaterLevel);
+            s.m_consumption = getConsumption(service, checkWaterLevel);
+            s.m_padding = getPadding(service);
+            s.m_budget = Singleton<EconomyManager>.instance.GetBudget(service, ItemClass.SubService.None, night);
+            return s;
+        }
+
+        private bool isWaterCapacityLower()
+        {
+            int sewage = Singleton<DistrictManager>.instance.m_districts.m_buffer[0].GetSewageCapacity();
+            int water = Singleton<DistrictManager>.instance.m_districts.m_buffer[0].GetWaterCapacity();
+            if (water < sewage)
+            {
+                return true;
+            } 
+            else
+            {
+                return false;
+            }
+        }
+
+        private int getCapacity(ItemClass.Service service, bool waterLevelLower)
         {
             if (service == ItemClass.Service.Water)
             {
-                return Singleton<DistrictManager>.instance.m_districts.m_buffer[0].GetWaterCapacity();
+                if (waterLevelLower)
+                {
+                    return Singleton<DistrictManager>.instance.m_districts.m_buffer[0].GetWaterCapacity();
+                }
+                else
+                {
+                    return Singleton<DistrictManager>.instance.m_districts.m_buffer[0].GetSewageCapacity();
+                }
             }
             else if (service == ItemClass.Service.Electricity)
             {
@@ -79,11 +100,18 @@ namespace WECalc
             }
         }
 
-        private int getConsumption(ItemClass.Service service)
+        private int getConsumption(ItemClass.Service service, bool waterLevelLower)
         {
             if (service == ItemClass.Service.Water)
             {
-                return Singleton<DistrictManager>.instance.m_districts.m_buffer[0].GetWaterConsumption();
+                if (waterLevelLower)
+                {
+                    return Singleton<DistrictManager>.instance.m_districts.m_buffer[0].GetWaterConsumption();
+                }
+                else
+                {
+                    return Singleton<DistrictManager>.instance.m_districts.m_buffer[0].GetSewageAccumulation();
+                }
             }
             else if (service == ItemClass.Service.Electricity)
             {
@@ -93,6 +121,67 @@ namespace WECalc
             {
                 return 0;
             }
+        }
+
+        private double getPadding(ItemClass.Service service)
+        {
+            if (service == ItemClass.Service.Water)
+            {
+                return WATER_PADDING;
+            }
+            else if (service == ItemClass.Service.Electricity)
+            {
+                return ELECTRICITY_PADDING;
+            }
+            else
+            {
+                return 0.0;
+            }
+        }
+
+        private int getNewBudget(ServiceObject s, ItemClass.Service service, bool night)
+        {
+            float newBudget = (float)(selectController(service, night).response(getError(s)) + s.m_budget);
+            newBudget = Mathf.Clamp(newBudget, 50, 150);
+
+            string msg = string.Format("Service {0} updated budget from ", service);
+            msg += string.Format("{0} to ", s.m_budget);
+            msg += string.Format("{0}.", newBudget);
+            msg += string.Format("\t{0} / ", s.m_consumption);
+            msg += string.Format("\t{0}.", s.m_capacity);
+            Logger.output(msg);
+
+            return Mathf.RoundToInt(newBudget);
+        }
+
+        private double getError(ServiceObject s)
+        {
+            double normalizer = ((double)(s.m_consumption)) / 100.0;
+            if (normalizer == 0)
+            {
+                return 0;
+            }
+            double error = (((double)s.m_consumption * (1.0 + s.m_padding)) - ((double)(s.m_capacity))) / normalizer;
+
+            if (error < 0.0)
+            {
+                error = -error * error;
+            }
+            else
+            {
+                error = error * error;
+            }
+            error /= 2.0;
+
+            if (error < -BUDGET_RATE_LIMIT)
+            {
+                error = -BUDGET_RATE_LIMIT;
+            }
+            else if (error > BUDGET_RATE_LIMIT)
+            {
+                error = BUDGET_RATE_LIMIT;
+            }
+            return error;
         }
 
         private PIDController selectController(ItemClass.Service service, bool night)
@@ -124,45 +213,20 @@ namespace WECalc
 
         public WaterElectricController()
         {
-            m_water_budget_controller_day = new PIDController(WATER_KP, WATER_KI, WATER_KD, WATER_N, WATER_PADDING, m_gainWater);
-            m_water_budget_controller_night = new PIDController(WATER_KP, WATER_KI, WATER_KD, WATER_N, WATER_PADDING, m_gainWater);
-            m_electricity_budget_controller_day = new PIDController(ELECTRICITY_KP, ELECTRICITY_KI, ELECTRICITY_KD, ELECTRICITY_N, ELECTRICITY_PADDING, m_gainElect);
-            m_electricity_budget_controller_night = new PIDController(ELECTRICITY_KP, ELECTRICITY_KI, ELECTRICITY_KD, ELECTRICITY_N, ELECTRICITY_PADDING, m_gainElect);
+            m_water_budget_controller_day = new PIDController(WATER_KP, WATER_KI, WATER_KD, WATER_N, m_gainWater);
+            m_water_budget_controller_night = new PIDController(WATER_KP, WATER_KI, WATER_KD, WATER_N, m_gainWater);
+            m_electricity_budget_controller_day = new PIDController(ELECTRICITY_KP, ELECTRICITY_KI, ELECTRICITY_KD, ELECTRICITY_N, m_gainElect);
+            m_electricity_budget_controller_night = new PIDController(ELECTRICITY_KP, ELECTRICITY_KI, ELECTRICITY_KD, ELECTRICITY_N, m_gainElect);
         }
+
 
     }
 
     public class PIDController
     {
-        const float BUDGET_RATE_LIMIT = 7.0f;
 
-        public double response(ServiceObject input)
+        public double response(double error)
         {
-            double normalizer = ((double)(input.m_consumption)) / 100.0;
-            if (normalizer == 0)
-            {
-                return 0;
-            }
-            double error = (((double)input.m_consumption * (1.0 + m_padding)) - ((double)(input.m_capacity))) / normalizer;
-
-            if (error < 0.0)
-            {
-                error = -error * error;
-            }
-            else
-            {
-                error = error * error;
-            }
-            error /= 2.0;
-
-            if (error < -BUDGET_RATE_LIMIT)
-            {
-                error = -BUDGET_RATE_LIMIT;
-            }
-            else if (error > BUDGET_RATE_LIMIT)
-            {
-                error = BUDGET_RATE_LIMIT;
-            }
 
             double output = 0;
             double prop = m_gain * m_k_p * error;
@@ -203,22 +267,20 @@ namespace WECalc
                 m_queue.Dequeue();
             }
 
-            return input.m_budget + output;
+            return output;
         }
 
         private double m_k_p, m_k_d, m_k_i;
         private Queue<double> m_queue;
         private int m_window;
-        private double m_padding;
         public  double m_gain;
 
-        public PIDController(double p, double i, double d, int w, double padding, double gain)
+        public PIDController(double p, double i, double d, int w, double gain)
         {
             m_k_p = p;
             m_k_i = i;
             m_k_d = d;
             m_window = w;
-            m_padding = padding;
             m_gain = gain;
 
             m_queue = new Queue<double>();
@@ -234,12 +296,14 @@ namespace WECalc
         public int m_capacity;
         public int m_consumption;
         public double m_budget;
+        public double m_padding;
 
-        public ServiceObject(int capacity, int consumption, double budget)
+        public ServiceObject(int capacity, int consumption, double budget, double padding)
         {
             m_capacity = capacity;
             m_consumption = consumption;
             m_budget = budget;
+            m_padding = padding;
         }
     }
 }
