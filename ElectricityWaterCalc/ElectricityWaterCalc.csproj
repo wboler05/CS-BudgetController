@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>WECalc</RootNamespace>
     <AssemblyName>WECalc</AssemblyName>
-    <TargetFrameworkVersion>v3.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -68,6 +68,7 @@
     <Compile Include="Source\WaterElectricController.cs" />
     <Compile Include="Source\MyIEconomyExtensionBase.cs" />
     <Compile Include="Source\MyIUserMod.cs" />
+    <Compile Include="Source\WEParameters.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Properties\Resources.resx">
