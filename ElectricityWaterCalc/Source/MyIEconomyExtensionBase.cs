@@ -6,12 +6,12 @@ using UnityEngine;
 using ChirpLogger;
 using System.Collections.Generic;
 
-namespace WECalc
+namespace BudgetManagerMod
 {
 
     public class MyIEconomyExtensionBase : EconomyExtensionBase
     {
-        private WaterElectricController weCalc;
+        private BudgetController weCalc;
 
         // Thread: Main
         public override void OnCreated(IEconomy economy)
@@ -19,7 +19,7 @@ namespace WECalc
             //Debug.Log("IEconomy Created");
             Logger.output("IEconomy Created");
 
-            weCalc = new WaterElectricController();
+            weCalc = new BudgetController();
         }
 
         // Thread: Main

@@ -2,62 +2,88 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace WECalc
+namespace BudgetManagerMod
 {
-    public class WEParameters
+    public class BMParameters
     {
-        private static WEParameters m_instance = null;
+        private static BMParameters m_instance = null;
 
         public bool m_enable_mod=true;
         public bool m_enable_water=true;
         public bool m_enable_electricity=true;
-        private double m_padding_water = 0.15;
-        private double m_padding_electricity = 0.15;
+        public bool m_enable_education = true;
+        private double m_offset_water = 0.15;
+        private double m_offset_electricity = 0.15;
+        private double m_offset_education = 0.15;
 
-        public double WaterPadding
+        public double WaterOffset
         {
-            get { return m_padding_water;  }
+            get { return m_offset_water;  }
             set
             {
                 if (value >= -100.0 && value <= 100.0)
                 {
-                    m_padding_water = value;
+                    m_offset_water = value;
                 } else if (value < -100.0)
                 {
-                    m_padding_water = -100.0;
+                    m_offset_water = -100.0;
                 } else
                 {
-                    m_padding_water = 100.0;
+                    m_offset_water = 100.0;
                 }
             }
         }
 
-        public double ElectricityPadding
+        public double ElectricityOffset
         {
-            get { return m_padding_electricity; }
+            get { return m_offset_electricity; }
             set
             {
                 if (value >= -100.0 && value <= 100.0)
                 {
-                    m_padding_electricity = value;
+                    m_offset_electricity = value;
                 }
                 else if (value < -100.0)
                 {
-                    m_padding_electricity = -100.0;
+                    m_offset_electricity = -100.0;
                 }
                 else
                 {
-                    m_padding_electricity = 100.0;
+                    m_offset_electricity = 100.0;
                 }
             }
         }
 
-        public static WEParameters instance()
+        public double EducationOffset
         {
-            if (m_instance == null) {
-                m_instance = new WEParameters();
+            get { return m_offset_education;  }
+            set
+            {
+                if (value < -100.0)
+                {
+                    m_offset_education = -100.0;
+                }
+                else if (value > 100.0)
+                {
+                    m_offset_education = 100.0;
+                }
+                else
+                {
+                    m_offset_education = value;
+                }
             }
-            return m_instance;
+        }
+
+        public static BMParameters instance
+        {
+            get
+            {
+                if (m_instance == null)
+                {
+                    m_instance = new BMParameters();
+                }
+                return m_instance;
+            }
         }
     }
 }

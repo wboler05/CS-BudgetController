@@ -1,7 +1,7 @@
 ﻿using ICities;
 using UnityEngine;
 
-namespace WECalc
+namespace BudgetManagerMod
 {
 
     public class MyIUserMod: IUserMod
@@ -9,7 +9,7 @@ namespace WECalc
 
         public string Name 
         {
-            get { return "Water and Electricity Controller BETA v0.1"; }
+            get { return "Water and Electricity Controller BETA v0.3"; }
         }
 
         public string Description 
@@ -22,26 +22,34 @@ namespace WECalc
         {
 
             UIHelperBase group_enable = helper.AddGroup("Enable Settings");
-            group_enable.AddCheckbox("Enable Mod", WEParameters.instance().m_enable_mod, (isChecked) => {
-                    WEParameters.instance().m_enable_mod = isChecked;
+            group_enable.AddCheckbox("Enable Mod", BMParameters.instance.m_enable_mod, (isChecked) => {
+                    BMParameters.instance.m_enable_mod = isChecked;
             });
-            group_enable.AddCheckbox("Enable Water Budget", WEParameters.instance().m_enable_water, (isChecked) =>
+            group_enable.AddCheckbox("Enable Water Budget", BMParameters.instance.m_enable_water, (isChecked) =>
             {
-                WEParameters.instance().m_enable_water = isChecked;
+                BMParameters.instance.m_enable_water = isChecked;
             });
-            group_enable.AddCheckbox("Enable Electricity Budget", WEParameters.instance().m_enable_electricity, (isChecked) =>
+            group_enable.AddCheckbox("Enable Electricity Budget", BMParameters.instance.m_enable_electricity, (isChecked) =>
             {
-                WEParameters.instance().m_enable_electricity = isChecked;
+                BMParameters.instance.m_enable_electricity = isChecked;
+            });
+            group_enable.AddCheckbox("Enable Education Budget", BMParameters.instance.m_enable_electricity, (isChecked) =>
+            {
+                BMParameters.instance.m_enable_electricity = isChecked;
             });
 
             UIHelperBase group_offsets = helper.AddGroup("Offset Controls");
-            group_offsets.AddSlider("Water Offset", -1.0f, +1.0f, 0.01f, (float)WEParameters.instance().WaterPadding, (value) =>
+            group_offsets.AddSlider("Water Offset", -1.0f, +1.0f, 0.01f, (float)BMParameters.instance.WaterOffset, (value) =>
             {
-                WEParameters.instance().WaterPadding = value;
+                BMParameters.instance.WaterOffset = value;
             });
-            group_offsets.AddSlider("Electricity Offset", -1.0f, +1.0f, 0.01f, (float)WEParameters.instance().ElectricityPadding, (value) =>
+            group_offsets.AddSlider("Electricity Offset", -1.0f, +1.0f, 0.01f, (float)BMParameters.instance.ElectricityOffset, (value) =>
             {
-                WEParameters.instance().ElectricityPadding = value;
+                BMParameters.instance.ElectricityOffset = value;
+            });
+            group_offsets.AddSlider("Education Offset", -1.0f, +1.0f, 0.01f, (float)BMParameters.instance.EducationOffset, (value) =>
+            {
+                BMParameters.instance.EducationOffset = value;
             });
         }
 
@@ -52,7 +60,7 @@ namespace WECalc
         static public void output(string s)
         {
             string newString;
-            newString = "WECalc: " + s;
+            newString = "BudgetManagerMod: " + s;
             Debug.Log(newString);
         }
     }
