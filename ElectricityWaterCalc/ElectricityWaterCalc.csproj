@@ -68,6 +68,8 @@
     <Compile Include="Source\BudgetController.cs" />
     <Compile Include="Source\MyIEconomyExtensionBase.cs" />
     <Compile Include="Source\MyIUserMod.cs" />
+    <Compile Include="Source\PID.cs" />
+    <Compile Include="Source\ServiceObject.cs" />
     <Compile Include="Source\WEParameters.cs" />
   </ItemGroup>
   <ItemGroup>

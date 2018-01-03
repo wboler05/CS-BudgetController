@@ -51,6 +51,41 @@ namespace BudgetManagerMod
             {
                 BMParameters.instance.EducationOffset = value;
             });
+
+            UIHelperBase group_gains = helper.AddGroup("Gain Controls");
+            ItemClass.Service service = ItemClass.Service.Water;
+            float defaultGain = (float)BudgetController.instance.gain(service);
+            group_gains.AddSlider("Water Gain", 0.01f*defaultGain, 10f*defaultGain, 0.01f, defaultGain, (value) =>
+            {
+                service = ItemClass.Service.Water;
+                BudgetController.instance.setGain(service, value);
+
+                string msg = string.Format("New Gain Set for {0}: ", service);
+                msg += string.Format("{1}", value);
+                Logger.output(msg);
+            });
+
+            service = ItemClass.Service.Electricity;
+            defaultGain = (float)BudgetController.instance.gain(service);
+            group_gains.AddSlider("Electricity Gain", 0.01f * defaultGain, 10f * defaultGain, 0.01f, defaultGain, (value) =>
+            {
+                BudgetController.instance.setGain(service, value);
+
+                string msg = string.Format("New Gain Set for {0}: ", service);
+                msg += string.Format("{1}", value);
+                Logger.output(msg);
+            });
+
+            service = ItemClass.Service.Education;
+            defaultGain = (float)BudgetController.instance.gain(service);
+            group_gains.AddSlider("Education Gain", 0.01f * defaultGain, 10f * defaultGain, 0.01f, defaultGain, (value) =>
+            {
+                BudgetController.instance.setGain(service, value);
+
+                string msg = string.Format("New Gain Set for {0}: ", service);
+                msg += string.Format("{1}", value);
+                Logger.output(msg);
+            });
         }
 
     }

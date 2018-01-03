@@ -23,6 +23,14 @@ namespace BudgetManagerMod
         const double WATER_KD = 0.125;
         const int WATER_N = 10;
 
+        /*
+        private double m_gainWater = 1;
+        const double WATER_KP = 1.0;
+        const double WATER_KI = 0.5;
+        const double WATER_KD = 1.25;
+        const int WATER_N = 10;
+        */
+
         private double m_gainElect = 0.09;
         const double ELECTRICITY_KP = 1.0;
         const double ELECTRICITY_KI = 0.02;
@@ -36,6 +44,19 @@ namespace BudgetManagerMod
         const int EDUCATION_N = 10;
 
         const float BUDGET_RATE_LIMIT = 7.0f;
+
+        private static BudgetController m_instance=null;
+        public static BudgetController instance
+        {
+            get
+            {
+                if (m_instance == null)
+                {
+                    m_instance = new BudgetController();
+                }
+                return m_instance;
+            }
+        }
 
         public void updateLogic()
         {
@@ -305,6 +326,11 @@ namespace BudgetManagerMod
             return error;
         }
 
+        private PIDController selectController(ItemClass.Service service)
+        {
+            return selectController(service, SimulationManager.instance.m_isNightTime);
+        }
+
         // Select the PID controller based on service type and night/day settings
         private PIDController selectController(ItemClass.Service service, bool night)
         {
@@ -344,6 +370,16 @@ namespace BudgetManagerMod
             return null;
         }
 
+        public void setGain(ItemClass.Service service, double value)
+        {
+            selectController(service).m_gain = value;
+        }
+
+        public double gain(ItemClass.Service service)
+        {
+            return selectController(service).m_gain;
+        }
+
         // Constructor
         public BudgetController()
         {
@@ -355,114 +391,6 @@ namespace BudgetManagerMod
             m_education_budget_controller_night = new PIDController(EDUCATION_KP, EDUCATION_KI, EDUCATION_KD, EDUCATION_N, m_gainEducation);
         }
 
-
     }
 
-    public class PIDController
-    {
-
-        public double response(double error)
-        {
-
-            double output = 0;
-            double prop = m_gain * m_k_p * error;
-
-            double integ = 0, prevError = 0;
-            int i = 0;
-            if (m_queue != null)
-            {
-                if (m_queue.Count > 0)
-                {
-                    foreach (double e in m_queue)
-                    {
-                        integ += e;
-                        if (i++ == 0)
-                        {
-                            prevError = e;
-                        }
-                    }
-                    integ /= m_queue.Count;
-                }
-            }
-            integ *= m_gain * m_k_i;
-
-            double deriv = 0;
-            if (m_queue != null)
-            {
-                if (m_queue.Count > 0)
-                {
-                    deriv = m_gain * m_k_d * (error - prevError);
-                }
-            }
-
-            output = prop + integ + deriv;
-
-            m_queue.Enqueue(error);
-            if (m_queue.Count > m_window)
-            {
-                m_queue.Dequeue();
-            }
-
-            return output;
-        }
-
-        private double m_k_p, m_k_d, m_k_i;
-        private Queue<double> m_queue;
-        private int m_window;
-        public  double m_gain;
-
-        public PIDController(double p, double i, double d, int w, double gain)
-        {
-            m_k_p = p;
-            m_k_i = i;
-            m_k_d = d;
-            m_window = w;
-            m_gain = gain;
-
-            m_queue = new Queue<double>();
-            for (int idx = 0; idx < m_window; idx++)
-            {
-                m_queue.Enqueue(0);
-            }
-        }
-    }
-
-    public class ServiceObject
-    {
-        public enum WaterBudgetOption { Water=0, Sewage=1 };
-        public enum EducationBudgetOption { Elementary = 0, HighSchool = 1, University = 2 };
-
-        public int m_capacity;
-        public int m_consumption;
-        public double m_budget;
-        public double m_padding;
-        public ItemClass.Service m_service;
-        public bool m_night;
-        public WaterBudgetOption m_waterBudgetOption;
-        public EducationBudgetOption m_educationBudgetOption;
-
-        public ServiceObject()
-        {
-            m_capacity = 0;
-            m_consumption = 0;
-            m_budget = 0;
-            m_padding = 0;
-            m_service = ItemClass.Service.None;
-            m_night = false;
-            m_waterBudgetOption = WaterBudgetOption.Water;
-            m_educationBudgetOption = EducationBudgetOption.Elementary;
-        }
-
-        public ServiceObject(int capacity, int consumption, double budget, double padding, ItemClass.Service service, bool night, WaterBudgetOption waterOption, EducationBudgetOption educationOption)
-        {
-            m_capacity = capacity;
-            m_consumption = consumption;
-            m_budget = budget;
-            m_padding = padding;
-            m_service = service;
-            m_night = night;
-            m_waterBudgetOption = waterOption;
-            m_educationBudgetOption = educationOption;
-        }
-    }
 }
