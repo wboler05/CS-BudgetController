@@ -17,33 +17,36 @@ namespace BudgetManagerMod
         private PIDController m_education_budget_controller_day;
         private PIDController m_education_budget_controller_night;
 
+        /*
         private double m_gainWater = 0.09;
         const double WATER_KP = 1.0;
         const double WATER_KI = 0.5;
         const double WATER_KD = 0.125;
         const int WATER_N = 10;
-
-        /*
-        private double m_gainWater = 1;
-        const double WATER_KP = 1.0;
-        const double WATER_KI = 0.5;
-        const double WATER_KD = 1.25;
-        const int WATER_N = 10;
         */
 
-        private double m_gainElect = 0.09;
+        // Tuner
+        // Top: 0.15625 Bottom: 0.125
+
+        private double m_gainWater = 0.0908203; //0.0800781  0.125
+        const double WATER_KP = 1.0;
+        const double WATER_KI = 0.01; // 0.01
+        const double WATER_KD = 0.04;  // 0.375
+//        const int WATER_N = 10;
+
+        private double m_gainElect = 0.0908203;
         const double ELECTRICITY_KP = 1.0;
-        const double ELECTRICITY_KI = 0.02;
-        const double ELECTRICITY_KD = 0.01;
-        const int ELECTRICITY_N = 10;
+        const double ELECTRICITY_KI = 0.01;
+        const double ELECTRICITY_KD = 0.03;
+//        const int ELECTRICITY_N = 10;
 
-        private double m_gainEducation = 0.09;
+        private double m_gainEducation = 0.0908203;
         const double EDUCATION_KP = 1.0;
-        const double EDUCATION_KI = 0.02;
-        const double EDUCATION_KD = 0.01;
-        const int EDUCATION_N = 10;
+        const double EDUCATION_KI = 0.01;
+        const double EDUCATION_KD = 0.03;
+//        const int EDUCATION_N = 10;
 
-        const float BUDGET_RATE_LIMIT = 7.0f;
+        const float BUDGET_RATE_LIMIT = 50.0f;
 
         private static BudgetController m_instance=null;
         public static BudgetController instance
@@ -383,12 +386,12 @@ namespace BudgetManagerMod
         // Constructor
         public BudgetController()
         {
-            m_water_budget_controller_day = new PIDController(WATER_KP, WATER_KI, WATER_KD, WATER_N, m_gainWater);
-            m_water_budget_controller_night = new PIDController(WATER_KP, WATER_KI, WATER_KD, WATER_N, m_gainWater);
-            m_electricity_budget_controller_day = new PIDController(ELECTRICITY_KP, ELECTRICITY_KI, ELECTRICITY_KD, ELECTRICITY_N, m_gainElect);
-            m_electricity_budget_controller_night = new PIDController(ELECTRICITY_KP, ELECTRICITY_KI, ELECTRICITY_KD, ELECTRICITY_N, m_gainElect);
-            m_education_budget_controller_day = new PIDController(EDUCATION_KP, EDUCATION_KI, EDUCATION_KD, EDUCATION_N, m_gainEducation);
-            m_education_budget_controller_night = new PIDController(EDUCATION_KP, EDUCATION_KI, EDUCATION_KD, EDUCATION_N, m_gainEducation);
+            m_water_budget_controller_day = new PIDController(WATER_KP, WATER_KI, WATER_KD, m_gainWater);
+            m_water_budget_controller_night = new PIDController(WATER_KP, WATER_KI, WATER_KD, m_gainWater);
+            m_electricity_budget_controller_day = new PIDController(ELECTRICITY_KP, ELECTRICITY_KI, ELECTRICITY_KD, m_gainElect);
+            m_electricity_budget_controller_night = new PIDController(ELECTRICITY_KP, ELECTRICITY_KI, ELECTRICITY_KD, m_gainElect);
+            m_education_budget_controller_day = new PIDController(EDUCATION_KP, EDUCATION_KI, EDUCATION_KD, m_gainEducation);
+            m_education_budget_controller_night = new PIDController(EDUCATION_KP, EDUCATION_KI, EDUCATION_KD, m_gainEducation);
         }
 
     }
