@@ -321,16 +321,6 @@ namespace BudgetManagerMod
             }
             double error = -(((double)s.m_consumption * (1.0 + s.m_padding)) - ((double)(s.m_capacity))) / normalizer;
 
-            //if (error < 0.0)
-            //{
-            //    error = -error * error;
-            //}
-            //else
-            //{
-            //    error = error * error;
-            //}
-            //error /= 2.0;
-
             if (error < -BUDGET_RATE_LIMIT)
             {
                 error = -BUDGET_RATE_LIMIT;
