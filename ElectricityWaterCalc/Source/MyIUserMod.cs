@@ -9,12 +9,12 @@ namespace BudgetManagerMod
 
         public string Name 
         {
-            get { return "Water and Electricity Controller BETA v0.3"; }
+            get { return "Budget Controller"; }
         }
 
         public string Description 
         {
-            get { return "Automatically adjusts the budget for water and electricity."; }
+            get { return "Automatically adjusts the budget for water, sewage, electricity, and education"; }
 			
         }
 
@@ -52,6 +52,7 @@ namespace BudgetManagerMod
                 BMParameters.instance.EducationOffset = value;
             });
 
+            /*
             UIHelperBase group_gains = helper.AddGroup("Gain Controls");
             ItemClass.Service service = ItemClass.Service.Water;
             float defaultGain = (float)BudgetController.instance.gain(service);
@@ -86,6 +87,7 @@ namespace BudgetManagerMod
                 msg += string.Format("{1}", value);
                 Logger.output(msg);
             });
+            */
         }
 
     }
