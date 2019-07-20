@@ -13,7 +13,7 @@ namespace BudgetManagerMod
     {
         //private BudgetController weCalc;
 
-        private ItemClass.Service m_testService = ItemClass.Service.Electricity;
+        //private ItemClass.Service m_testService = ItemClass.Service.Electricity;
         private int m_stepBudget = 10;
         private int m_minDelta = 1;
         private int m_capture_window = 5;

@@ -66,6 +66,7 @@
     <Compile Include="Source\ChirpLogger\ChirpLogger.cs" />
     <Compile Include="Source\ChirpLogger\ChirpLogger.Internal\Chirp.cs" />
     <Compile Include="Source\BudgetController.cs" />
+    <Compile Include="Source\gd.cs" />
     <Compile Include="Source\MyIEconomyExtensionBase.cs" />
     <Compile Include="Source\MyIUserMod.cs" />
     <Compile Include="Source\PID.cs" />

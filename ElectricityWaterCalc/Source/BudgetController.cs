@@ -10,18 +10,31 @@ namespace BudgetManagerMod
 {
     public class BudgetController
     {
-        private PIDController m_water_budget_controller_day;
-        private PIDController m_water_budget_controller_night;
-        private PIDController m_electricity_budget_controller_day;
-        private PIDController m_electricity_budget_controller_night;
-        private PIDController m_education_budget_controller_day;
-        private PIDController m_education_budget_controller_night;
+        // Gradient Descent
+        private GD m_water_budget_controller_day;
+        private GD m_water_budget_controller_night;
+        private GD m_electricity_budget_controller_day;
+        private GD m_electricity_budget_controller_night;
+        private GD m_education_budget_controller_day;
+        private GD m_education_budget_controller_night;
 
-        private double m_gainWater = 0.09;
-        const double WATER_KP = 1.0;
-        const double WATER_KI = 0.5;
-        const double WATER_KD = 0.125;
-        const int WATER_N = 10;
+        private double m_gainWater = 0.25;
+        private double m_gainElect = 0.25;
+        private double m_gainEducation = 0.25;
+
+        // PID
+        //private PIDController m_water_budget_controller_day;
+        //private PIDController m_water_budget_controller_night;
+        //private PIDController m_electricity_budget_controller_day;
+        //private PIDController m_electricity_budget_controller_night;
+        //private PIDController m_education_budget_controller_day;
+        //private PIDController m_education_budget_controller_night;
+
+        //private double m_gainWater = 0.09;
+        //const double WATER_KP = 1.0;
+        //const double WATER_KI = 0.5;
+        //const double WATER_KD = 0.125;
+        //const int WATER_N = 10;
 
         /*
         private double m_gainWater = 1;
@@ -31,17 +44,17 @@ namespace BudgetManagerMod
         const int WATER_N = 10;
         */
 
-        private double m_gainElect = 0.09;
-        const double ELECTRICITY_KP = 1.0;
-        const double ELECTRICITY_KI = 0.02;
-        const double ELECTRICITY_KD = 0.01;
-        const int ELECTRICITY_N = 10;
+        //private double m_gainElect = 0.09;
+        //const double ELECTRICITY_KP = 1.0;
+        //const double ELECTRICITY_KI = 0.02;
+        //const double ELECTRICITY_KD = 0.01;
+        //const int ELECTRICITY_N = 10;
 
-        private double m_gainEducation = 0.09;
-        const double EDUCATION_KP = 1.0;
-        const double EDUCATION_KI = 0.02;
-        const double EDUCATION_KD = 0.01;
-        const int EDUCATION_N = 10;
+        //private double m_gainEducation = 0.09;
+        //const double EDUCATION_KP = 1.0;
+        //const double EDUCATION_KI = 0.02;
+        //const double EDUCATION_KD = 0.01;
+        //const int EDUCATION_N = 10;
 
         const float BUDGET_RATE_LIMIT = 7.0f;
 
@@ -60,7 +73,7 @@ namespace BudgetManagerMod
 
         public void updateLogic()
         {
-            System.DateTime currentTime = SimulationManager.instance.m_currentGameTime;
+            //System.DateTime currentTime = SimulationManager.instance.m_currentGameTime;
 
             // Check if DistrictManager exists
             if (Singleton<DistrictManager>.exists)
@@ -282,14 +295,15 @@ namespace BudgetManagerMod
         // Calculate the new budget based on the service object, and return it's integer value.
         private int getNewBudget(ServiceObject s)
         {
-            float newBudget = (float)(selectController(s.m_service, s.m_night).response(getError(s)) + s.m_budget);
-            newBudget = Mathf.Clamp(newBudget, 50, 150);
+            double l_error = getError(s);
+            double l_response = selectController(s.m_service, s.m_night).response(l_error);
+            float raw_newBudget = (float)(l_response + s.m_budget);
+            float newBudget = Mathf.Clamp(raw_newBudget, 50, 150);
 
-            string msg = string.Format("Service {0} updated budget from ", s.m_service);
-            msg += string.Format("{0} to ", s.m_budget);
-            msg += string.Format("{0}.", newBudget);
-            msg += string.Format("\t{0} / ", s.m_consumption);
-            msg += string.Format("\t{0}.", s.m_capacity);
+            string msg = string.Format("GD: Service {0} updated budget from {1} to {2} with error {3} and response {4}", 
+                s.m_service, s.m_budget, newBudget, l_error, l_response);
+            msg += string.Format("\t{0}/{1}.", s.m_consumption, s.m_capacity);
+            msg += string.Format("\tRaw Budget: {0}", raw_newBudget);
             Logger.output(msg);
 
             return Mathf.RoundToInt(newBudget);
@@ -298,22 +312,24 @@ namespace BudgetManagerMod
         // Calculate the budget error based on consumption, capacity, and padding offset.
         private double getError(ServiceObject s)
         {
+            //return (double)(s.m_consumption - s.m_capacity) / 100.0;
+
             double normalizer = ((double)(s.m_consumption)) / 100.0;
             if (normalizer == 0)
             {
                 return 0;
             }
-            double error = (((double)s.m_consumption * (1.0 + s.m_padding)) - ((double)(s.m_capacity))) / normalizer;
+            double error = -(((double)s.m_consumption * (1.0 + s.m_padding)) - ((double)(s.m_capacity))) / normalizer;
 
-            if (error < 0.0)
-            {
-                error = -error * error;
-            }
-            else
-            {
-                error = error * error;
-            }
-            error /= 2.0;
+            //if (error < 0.0)
+            //{
+            //    error = -error * error;
+            //}
+            //else
+            //{
+            //    error = error * error;
+            //}
+            //error /= 2.0;
 
             if (error < -BUDGET_RATE_LIMIT)
             {
@@ -326,13 +342,13 @@ namespace BudgetManagerMod
             return error;
         }
 
-        private PIDController selectController(ItemClass.Service service)
+        private GD selectController(ItemClass.Service service)
         {
             return selectController(service, SimulationManager.instance.m_isNightTime);
         }
 
         // Select the PID controller based on service type and night/day settings
-        private PIDController selectController(ItemClass.Service service, bool night)
+        private GD selectController(ItemClass.Service service, bool night)
         {
             if (service == ItemClass.Service.Water)
             {
@@ -383,12 +399,19 @@ namespace BudgetManagerMod
         // Constructor
         public BudgetController()
         {
-            m_water_budget_controller_day = new PIDController(WATER_KP, WATER_KI, WATER_KD, WATER_N, m_gainWater);
-            m_water_budget_controller_night = new PIDController(WATER_KP, WATER_KI, WATER_KD, WATER_N, m_gainWater);
-            m_electricity_budget_controller_day = new PIDController(ELECTRICITY_KP, ELECTRICITY_KI, ELECTRICITY_KD, ELECTRICITY_N, m_gainElect);
-            m_electricity_budget_controller_night = new PIDController(ELECTRICITY_KP, ELECTRICITY_KI, ELECTRICITY_KD, ELECTRICITY_N, m_gainElect);
-            m_education_budget_controller_day = new PIDController(EDUCATION_KP, EDUCATION_KI, EDUCATION_KD, EDUCATION_N, m_gainEducation);
-            m_education_budget_controller_night = new PIDController(EDUCATION_KP, EDUCATION_KI, EDUCATION_KD, EDUCATION_N, m_gainEducation);
+            //m_water_budget_controller_day = new PIDController(WATER_KP, WATER_KI, WATER_KD, WATER_N, m_gainWater);
+            //m_water_budget_controller_night = new PIDController(WATER_KP, WATER_KI, WATER_KD, WATER_N, m_gainWater);
+            //m_electricity_budget_controller_day = new PIDController(ELECTRICITY_KP, ELECTRICITY_KI, ELECTRICITY_KD, ELECTRICITY_N, m_gainElect);
+            //m_electricity_budget_controller_night = new PIDController(ELECTRICITY_KP, ELECTRICITY_KI, ELECTRICITY_KD, ELECTRICITY_N, m_gainElect);
+            //m_education_budget_controller_day = new PIDController(EDUCATION_KP, EDUCATION_KI, EDUCATION_KD, EDUCATION_N, m_gainEducation);
+            //m_education_budget_controller_night = new PIDController(EDUCATION_KP, EDUCATION_KI, EDUCATION_KD, EDUCATION_N, m_gainEducation);
+
+            m_water_budget_controller_day = new GD(m_gainWater);
+            m_water_budget_controller_night = new GD(m_gainWater);
+            m_electricity_budget_controller_day = new GD(m_gainElect);
+            m_electricity_budget_controller_night = new GD(m_gainElect);
+            m_education_budget_controller_day = new GD(m_gainEducation);
+            m_education_budget_controller_night = new GD(m_gainEducation);
         }
 
     }
